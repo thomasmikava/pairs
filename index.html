@@ -24,43 +24,21 @@
 			user-select: none;
 			padding-left: 20px;
 		}
+
+		.pale {
+			color: gray;
+		}
 	</style>
 </head>
 <body>
 	<div class="textareas">
 		<div>
 			<div>Old pairs</div>
-			<textarea id="oldPairs" placeholder="Paste values">Group 1
-a
-b
-
-Group 2
-c
-d
-
-Group 1
-a
-c
-
-Group 2
-b
-d
-
-Group 2
-a
-d
-
-			</textarea>
+			<textarea id="oldPairs" placeholder="Paste values"></textarea>
 		</div>
 		<div>
 			<div>Current members</div>
-			<textarea id="currentMembers" placeholder="Paste values">
-a
-b
-c
-d
-
-			</textarea>
+			<textarea id="currentMembers" placeholder="Paste values"></textarea>
 		</div>
 	</div>
 	<button onclick="calculateTeams();">Calculate</button>
@@ -164,7 +142,7 @@ d
 				const cost = (pairCount[pair1] || {})[pair2] || 0;
 				count++;
 				x += '<li>'
-				x += `<strong>Group ${count} <span class="meetNote">Meet ${cost} time(s) already</span></strong>`;
+				x += `<strong>Group ${count} <span class="meetNote ${cost === 0 ? "pale" : ""}">Met ${cost} time(s) ${cost > 0 ? "already" : ""}</span></strong>`;
 				
 				x += '<ol>'
 				x += `<li>${pair1}</li>`;
@@ -188,8 +166,6 @@ d
 			}
 			return array;
 		}
-
-		calculateTeams();
 	</script>
 </body>
 </html>
