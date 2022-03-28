@@ -4,8 +4,192 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title></title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+		.textareas {
+			display: flex;
+		}
+		.textareas>* {
+			flex: 1;
+		}
+		.textareas textarea {
+			width: 100%;
+			resize: vertical;
+			min-height: 150px;
+		}
+
+		.meetNote {
+			user-select: none;
+			padding-left: 20px;
+		}
+	</style>
 </head>
 <body>
-	Hey!
+	<div class="textareas">
+		<div>
+			<div>Old pairs</div>
+			<textarea id="oldPairs" placeholder="Paste values">Group 1
+a
+b
+
+Group 2
+c
+d
+
+Group 1
+a
+c
+
+Group 2
+b
+d
+
+Group 2
+a
+d
+
+			</textarea>
+		</div>
+		<div>
+			<div>Current members</div>
+			<textarea id="currentMembers" placeholder="Paste values">
+a
+b
+c
+d
+
+			</textarea>
+		</div>
+	</div>
+	<button onclick="calculateTeams();">Calculate</button>
+
+	<div id="results">
+
+	</div>
+
+	<script>
+		const getPairs = () => {
+			const oldPairsElem = document.getElementById("oldPairs");
+			const oldPairsArray = oldPairsElem.value.trim().split("\n").map(e => e.trim()).filter(e => e.length > 0);
+			const pairs = [];
+			for (let i = 1; i < oldPairsArray.length - 1; i+=3) {
+				pairs.push([oldPairsArray[i], oldPairsArray[i + 1]]);
+			}
+			return pairs;
+		}
+		const getPairCounts = (pairs) => {
+			const pairCount = {};
+			for (const [pair1, pair2] of pairs) {
+				if (!pairCount[pair1]) pairCount[pair1] = {};
+				if (!pairCount[pair1][pair2]) pairCount[pair1][pair2] = 0;
+				pairCount[pair1][pair2]++;
+
+				
+				if (!pairCount[pair2]) pairCount[pair2] = {};
+				if (!pairCount[pair2][pair1]) pairCount[pair2][pair1] = 0;
+				pairCount[pair2][pair1]++;
+			}
+			return pairCount;
+		}
+		
+		const getMembers = (pairs) => {
+			const membersElem = document.getElementById("currentMembers");
+			const membersArray = membersElem.value.trim().split("\n").map(e => e.trim()).filter(e => e.length > 0);
+			return membersArray;
+		}
+
+		const calculateTeams = () => {
+			const pairCount = getPairCounts(getPairs());
+			const members = getMembers();
+			const getNewPairs = calculateNewPairs(members, pairCount);
+			drawPairs(getNewPairs, pairCount);
+		}
+
+		const calculateNewPairs = (members, pairCount) => {
+			let minCost = Infinity;
+			let bestPairs = [];
+			for (let i = 0 ; i < 3_000; i++) {
+				const shuffledMembers = shuffleArray(members);
+				const { pairs, cost } = getGreedyPairs(shuffledMembers, pairCount);
+				if (cost < minCost) {
+					minCost = cost;
+					bestPairs = pairs;
+				}
+				if (minCost === 0) break;
+			}
+			return bestPairs;
+		}
+
+		const getGreedyPairs = (members, pairCount) => {
+			const pairs = [];
+			const flags = new Array(members.length).fill(false);
+			let totalCost = 0;
+			for (let i = 0; i < members.length; ++i) {
+				if (flags[i]) continue;
+
+				let minCount = Infinity;
+				let bestIndices = [];
+				for (let j = i + 1; j < members.length; ++j) {
+					if (flags[j]) continue;
+					const count = (pairCount[members[i]] || {})[members[j]] || 0;
+					if (count < minCount) {
+						minCount = count;
+						bestIndices = [j];
+					} else if (count === minCount) {
+						bestIndices.push(j);
+					}
+				}
+
+				if (bestIndices.length === 0) {
+					continue;
+				}
+
+				const bestIndex = bestIndices[Math.floor(Math.random() * bestIndices.length)];
+
+				totalCost += minCount; 
+				pairs.push([members[i], members[bestIndex]]);
+				flags[i] = flags[bestIndex] = true;
+			}
+			const lonelyWolfIndex = flags.findIndex(e => !e);
+			if (lonelyWolfIndex >= 0) pairs.push([members[lonelyWolfIndex], members[lonelyWolfIndex]]);
+			return { pairs, cost: totalCost };
+		}
+
+		const drawPairs = (pairs, pairCount) => {
+			let x = '<ol>';
+			let count = 0;
+			for (const [pair1, pair2] of pairs) {
+				const cost = (pairCount[pair1] || {})[pair2] || 0;
+				count++;
+				x += '<li>'
+				x += `<strong>Group ${count} <span class="meetNote">Meet ${cost} time(s) already</span></strong>`;
+				
+				x += '<ol>'
+				x += `<li>${pair1}</li>`;
+				x += `<li>${pair2}</li>`;
+				x += '</ol>';
+
+				x += '</li>';
+			}
+			x += '</ol>';
+
+			document.getElementById('results').innerHTML = x;
+		}
+
+		function shuffleArray(arr) {
+			const array = [...arr];
+			for (let i = array.length - 1; i > 0; i--) {
+				let j = Math.floor(Math.random() * (i + 1));
+				let temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+			}
+			return array;
+		}
+
+		calculateTeams();
+	</script>
 </body>
 </html>
