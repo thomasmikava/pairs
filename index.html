@@ -28,6 +28,24 @@
 		.pale {
 			color: gray;
 		}
+
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+			font-weight: normal;
+		}
+
+		.paleCell {
+			background-color: #ccc;
+		}
+
 	</style>
 </head>
 <body>
@@ -46,6 +64,8 @@
 	<div id="results">
 
 	</div>
+
+	<div id="countTable"></div>
 
 	<script>
 		const getPairs = () => {
@@ -81,8 +101,9 @@
 		const calculateTeams = () => {
 			const pairCount = getPairCounts(getPairs());
 			const members = getMembers();
-			const getNewPairs = calculateNewPairs(members, pairCount);
-			drawPairs(getNewPairs, pairCount);
+			const newPairs = calculateNewPairs(members, pairCount);
+			drawPairs(newPairs, pairCount);
+			drawTable(newPairs, pairCount);
 		}
 
 		const calculateNewPairs = (members, pairCount) => {
@@ -154,6 +175,49 @@
 			x += '</ol>';
 
 			document.getElementById('results').innerHTML = x;
+		}
+
+		const drawTable = (newPairs, pairCount) => {
+			let members = [];
+			newPairs.forEach(([pair1, pair2]) => {members.push(pair1, pair2)});
+			const currentMembersSet = new Set(members);
+			members.push(...Object.keys(pairCount));
+			members = [...(new Set(members))].sort((a, b) => a.localeCompare(b));
+
+			const newPairCount = getPairCounts(newPairs);
+
+			
+			let x = '<table>';
+
+			x += '<tr>';
+			x += '<th></th>';
+			for (const member of members) {
+				const isCurrentMember = currentMembersSet.has(member);
+				x += `<th class="${isCurrentMember ? '' : 'paleCell'}">${member}</th>`;
+			}
+			x += '</tr>';
+
+			for (const member of members) {
+				const isCurrentMember = currentMembersSet.has(member);
+				x += '<tr>';
+				x += `<td class="${isCurrentMember ? '' : 'paleCell'}">${member}</td>`;
+				for (const member2 of members) {
+					const isCurrentPair = currentMembersSet.has(member2) && isCurrentMember;
+					const oldCount = (pairCount[member] || {})[member2] || 0;
+					let newCount = (newPairCount[member] || {})[member2] || 0;
+					if (member === member2 && newCount > 0) newCount = 1;
+					const totalCount = oldCount + newCount;
+					const className = isCurrentPair ? '' : 'paleCell';
+
+					if (totalCount === 0) x += `<td class="${className}"></td>`;
+					else x += `<td class="${className}">${oldCount}${newCount > 0 ? ` + ${newCount}` : ''}</td>`;
+				}
+				x += '</tr>';
+			}
+
+			x += '</table>';
+
+			document.getElementById('countTable').innerHTML = x;
 		}
 
 		function shuffleArray(arr) {
